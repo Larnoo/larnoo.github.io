@@ -106,12 +106,12 @@ export class App extends React.PureComponent<any, State> {
 
     componentDidMount(): void {
         readJson();
-        this.update();
+        this.update(true);
     }
 
-    private update() {
+    private update(isFirst?: boolean) {
         this.requestFrameId = requestAnimationFrame((time: number) => {
-            if (time - this.frameTime > 1000) {
+            if ((time - this.frameTime > 1000) || isFirst) {
                 console.log('requestAnimationFrame', time, 'xxx');
                 this.frameTime = time;
                 this.updateNCP(new Date(this.state.currentTime.getTime()+TimeStep));
