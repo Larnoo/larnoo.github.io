@@ -11,10 +11,12 @@ interface State {
     currentData: Set<Person>;
     currentTime: Date;
     height: number;
+    secondPerson: number;
 }
 
-const startTime = dayjs('2020-01-11').toDate();
+const startTime = dayjs('2020-01-10').toDate();
 const TimeStep: number = 3600 * 24 * 1000;
+const AnimationDuration: number = 200;
 const list: Array<Person> = [];
 
 function readJson() {
@@ -90,7 +92,12 @@ export class App extends React.PureComponent<any, State> {
     private requestFrameId: undefined | number;
     private frameTime: number = 0;
     // @ts-ignore
-    private icon = new BMap.Icon('public/dot.png', new BMap.Size(32, 32), {
+    private icon = new BMap.Icon('/dot.png', new BMap.Size(32, 32), {
+        // @ts-ignore
+        imageSize: new BMap.Size(32, 32)
+    });
+    // @ts-ignore
+    private yellowIcon = new BMap.Icon('/yellow.png', new BMap.Size(32, 32), {
         // @ts-ignore
         imageSize: new BMap.Size(32, 32)
     });
@@ -100,7 +107,8 @@ export class App extends React.PureComponent<any, State> {
         this.state = {
             currentTime: startTime,
             currentData: new Set<Person>(),
-            height: 0
+            height: 0,
+            secondPerson: 0
         }
     }
 
@@ -111,7 +119,7 @@ export class App extends React.PureComponent<any, State> {
 
     private update(isFirst?: boolean) {
         this.requestFrameId = requestAnimationFrame((time: number) => {
-            if ((time - this.frameTime > 1000) || isFirst) {
+            if (((time - this.frameTime > AnimationDuration) || isFirst) && this.state.currentTime.getTime() < this.endTime.getTime()) {
                 console.log('requestAnimationFrame', time, 'xxx');
                 this.frameTime = time;
                 this.updateNCP(new Date(this.state.currentTime.getTime()+TimeStep));
@@ -129,8 +137,9 @@ export class App extends React.PureComponent<any, State> {
     render() {
         const marks: Array<any> = [];
         this.state.currentData.forEach(person => {
+            const icon = person.myParentNCP ? this.yellowIcon : this.icon;
             marks.push(<Marker position={{lng: person.currentLocation.lng, lat: person.currentLocation.lat}}
-                               icon={{imageUrl: '/dot.png'}}/>);
+                               icon={icon}/>);
         });
         console.log('render', marks.length);
         return <div style={{height: '100%', width: '100%'}}>
@@ -148,7 +157,8 @@ export class App extends React.PureComponent<any, State> {
                 width: '100%',
                 alignItems: 'flex-start',
                 alignContent: 'center'
-            }}>{dayjs(this.state.currentTime).format("YYYY-MM-DD HH:mm:ss")}</div>
+            }}>{dayjs(this.state.currentTime).format("YYYY-MM-DD HH:mm:ss")
+            +', 武汉输入：' +(this.state.currentData.size-this.state.secondPerson)+', 被传染：'+this.state.secondPerson}</div>
         </div>;
     }
 
@@ -159,9 +169,16 @@ export class App extends React.PureComponent<any, State> {
         currentData.forEach(p => {
             newData.add(p);
         });
+        let secondPerson = 0;
+        newData.forEach(p=>{
+            if(p.myParentNCP){
+                secondPerson++;
+            }
+        });
         this.setState({
             currentData: newData,
-            currentTime: time
+            currentTime: time,
+            secondPerson: secondPerson
         });
     }
 }
